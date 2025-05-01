@@ -14,7 +14,7 @@ pipeline {
   stages {
     stage('Clone Repository') {
       steps {
-        git 'https://github.com/<your-username>/todo-ci-cd.git'
+        git 'https://github.com/Snehal1819/todo-ci-cd.git'
       }
     }
 
