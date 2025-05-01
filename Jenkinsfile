@@ -8,7 +8,7 @@ pipeline {
 
   tools {
     nodejs 'NodeJS-18'      // Make sure it's configured in Global Tool Configuration
-    // If sonar-scanner CLI is installed via Jenkins, mention it here if needed
+    sonarQube 'MySonarScanner'// If sonar-scanner CLI is installed via Jenkins, mention it here if needed
   }
 
   stages {
