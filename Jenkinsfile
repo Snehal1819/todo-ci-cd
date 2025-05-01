@@ -1,9 +1,14 @@
 pipeline {
   agent any
 
+  environment {
+    // Use the exact name from Jenkins > Configure System > SonarQube Servers
+    SONARQUBE_ENV = 'LocalSonar'
+  }
+
   tools {
-    // Make sure NodeJS is installed if using linters like eslint/stylelint
-    nodejs 'NodeJS-18'  // Configure this in Jenkins > Global Tool Configuration
+    nodejs 'NodeJS-18'      // Make sure it's configured in Global Tool Configuration
+    // If sonar-scanner CLI is installed via Jenkins, mention it here if needed
   }
 
   stages {
@@ -22,16 +27,26 @@ pipeline {
     stage('Linting') {
       steps {
         echo '🔍 Running HTML/CSS/JS linting...'
-        // Assuming you have eslint and stylelint configured
+        // Avoid failing pipeline due to lint issues (using || true)
         sh 'npx eslint . || true'
         sh 'npx stylelint "**/*.css" || true'
       }
     }
 
-    stage('Code Quality Check') {
+    stage('Code Quality Check - SonarQube') {
       steps {
-        withSonarQubeEnv('LocalSonar') {
+        echo '🚀 Running SonarQube Analysis...'
+        withSonarQubeEnv("${env.SONARQUBE_ENV}") {
           sh 'sonar-scanner'
+        }
+      }
+    }
+
+    stage('SonarQube Quality Gate') {
+      steps {
+        echo '⏳ Waiting for SonarQube Quality Gate result...'
+        timeout(time: 1, unit: 'MINUTES') {
+          waitForQualityGate abortPipeline: true
         }
       }
     }
@@ -46,7 +61,7 @@ pipeline {
 
     stage('Run Docker Container') {
       steps {
-        // Stops existing container and runs a new one
+        echo '🐳 Starting Docker container...'
         sh '''
           docker rm -f todo-container || true
           docker run -d -p 8080:80 --name todo-container todo-webapp
@@ -58,11 +73,11 @@ pipeline {
   post {
     success {
       echo '✅ Build Successful'
-      // You can add Slack or Email notifications here
+      // Optional: Add Slack or email notifications here
     }
     failure {
       echo '❌ Build Failed'
-      // Add alerts here too
+      // Optional: Add error alerting/notification
     }
   }
 }
